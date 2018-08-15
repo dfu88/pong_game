@@ -1,0 +1,146 @@
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.std_logic_unsigned.all;
+
+
+entity timer is 
+	port(	clk_in,load_in,start_in : in std_logic;
+			data_in					: in std_logic_vector(15 downto 0);
+			out_min10s, out_min1s, out_sec10s, out_sec1s: out std_logic_vector(7 downto 0);
+			time_out: out std_logic := '0');
+end entity timer;
+
+
+architecture struc of timer is 
+
+signal min10s, min1s, sec10s, sec1s : std_logic_vector(3 downto 0):=x"0";
+
+
+signal tOutMin10s, tOutmin1s, tOutsec10s, tOutsec1s : std_logic_vector(3 downto 0):=x"A";
+
+signal enM10s,enM1s, enS10s,enS1s :std_logic:='0';
+
+signal direction_in: std_logic:='0';
+signal a , new_clk: std_logic;
+
+signal Prev: std_logic:= '0';
+
+signal initM10s, initM1s, initS10s, initS1s: std_logic:='0';
+
+component BCD is 
+	port(enable,direction,init,clk	: in std_logic;
+		 Q_Out 						: out std_logic_vector(3 downto 0));
+end component BCD;
+
+component CLK1Hz is
+    Port (
+        clk_in : in  STD_LOGIC;
+        clk_out: out STD_LOGIC
+    );
+end component CLK1Hz;
+
+component BCD2SevenSeg is
+port (digit : in std_logic_vector(3 downto 0);
+	all_off : in std_logic;
+	LED_out : out std_logic_vector(7 downto 0));
+end component;
+
+begin
+
+	--10s (minutes)
+	Minutes_tens: BCD
+		port map( 	enable => enM10s, direction => direction_in,
+					init => initM10s, clk => new_clk, Q_Out => min10s);
+					
+	--1s (minutes)
+	Minutes_ones: BCD
+		port map( 	enable => enM1s, direction => direction_in,
+					init => initM1s, clk => new_clk, Q_Out => min1s);
+
+	--10s (seconds)
+	Seconds_tens: BCD
+		port map( 	enable => enS10s, direction => direction_in,
+					init => initS10s, clk => new_clk, Q_Out => sec10s);
+					
+	--1s (seconds)
+	Seconds_ones: BCD
+		port map( 	enable => enS1s, direction => direction_in,
+					init => initS1s, clk => new_clk, Q_Out => sec1s);
+
+	clkdivider: CLK1Hz
+		port map( clk_in =>clk_in, clk_out => new_clk);
+
+	Minutes_ten_7Seg : BCD2SevenSeg
+		port map(digit => min10s, all_off => '0', led_out => out_min10s);
+	
+	Minutes_one_7Seg : BCD2SevenSeg
+		port map(digit => min1s, all_off => '0', led_out => out_min1s);
+	
+	Seconds_ten_7Seg : BCD2SevenSeg
+		port map(digit => sec10s, all_off => '0', led_out => out_sec10s);
+	
+	Seconds_one_7Seg : BCD2SevenSeg
+		port map(digit => sec1s, all_off => '0', led_out => out_sec1s);
+	
+	--out_min10s <= min10s;
+	--out_min1s <= min1s;
+	--out_sec10s <= sec10s;
+	--out_sec1s <= sec1s;
+
+
+	process(new_clk)
+	begin
+		if rising_edge(new_clk) and load_in = '1' then
+			tOutmin10s <= data_in(15 downto 12);
+			tOutmin1s <= data_in(11 downto 8);
+			tOutsec10s <= data_in(7 downto 4);
+			tOutsec1s <= data_in(3 downto 0);
+		end if;
+	end process;
+	
+--GIVES ERRORs
+	--Control resets
+	initS1s <= '1' when load_in = '1' else '0';
+	
+	initS10s <= '1' when load_in = '1' else 
+		'1' when sec10s = "0101" and sec1s = "1001" else '0'; --reset when 60 secs
+	
+	initM1s <= '1' when load_in = '1' else '0';
+	
+	initM10s <= '1' when load_in = '1' else 
+		'1' when min10s = "0110" else '0'; -- resets when 60 mins
+
+	
+	--Control enables of BCDs
+	--enS1s <='1';
+	enS1s <= '1' when a = '1' else '0';--and initS1s = '0' else '0'; --consider resets in other statements
+	
+	enS10s <= '1' when a ='1' and sec1s = "1001" else '0'; -- every 10secs
+	
+	enM1s <= '1' when a ='1' and sec10s = "0101" and sec1s = "1001" else '0'; --every 60 secs
+	
+	enM10s <= '1' when a = '1' and min1s = "1001" and sec10s = "0101" and sec1s = "1001" else '0'; --every 10 minutes
+	
+	--a <= '1';
+
+	--check start_in is one clock cycle --START,LOAD,timeout IS BASED ON SLOW CLOCK
+	process(new_clk)
+	begin 
+		if rising_edge(new_clk) then --consider normal clock
+			if start_in = '1' then
+				a <= '1';
+			elsif load_in = '1' then
+				a <= '0';
+			--elsif timeout = '1'
+--				started <= '0'
+
+			elsif tOutMin10s = min10s and tOutmin1s = min1s and tOutsec10s = sec10s and tOutsec1s = sec1s then --consider one sec less
+				a <= '0';
+				time_out <= '1';--, '0' after 10 ns ; --change 10ns to 1s (NOT SYNTHESABLE)
+			else
+				time_out <= '0';
+			end if;
+		end if;
+	end process;
+
+end architecture struc;

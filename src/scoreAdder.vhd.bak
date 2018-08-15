@@ -1,0 +1,53 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE IEEE.STD_LOGIC_ARITH.all;
+USE IEEE.STD_LOGIC_UNSIGNED.all;
+
+entity adder is
+	port(		vert_sync, en_add												: in std_logic;
+				score100_in, score10_in, score1_in						: in std_logic_vector(3 downto 0);
+				score100_out, 	score10_out, 	score1_out						: out std_logic_vector(3 downto 0));
+				
+end entity adder;
+
+architecture beh of adder is 
+signal prevScore100: std_logic_vector(3 downto 0):= x"0";
+signal prevScore10: std_logic_vector(3 downto 0):= x"0";
+signal prevScore1: std_logic_vector(3 downto 0):= x"0";
+begin
+
+prevScore100 <= score100_in;
+prevScore10 < score10_in;
+prev1 <= score1_in;
+
+process
+variable current100: std_logic_vector(3 downto 0) 	:= prevScore100;
+variable current10: std_logic_vector(3 downto 0)	:= prevScore10;
+variable current1: std_logic_vector(3 downto 0)		:= prevScore1;
+begin
+WAIT UNTIL vert_sync'event and vert_sync = '1';
+	if ball_1_en = '0' then
+		current100 	<= "0000"
+		current10 	<= "0000"
+		current1		<= "0000"
+	else
+		if current10 = "1001"  and current1 = "1001" then
+			current10 <= "0000";
+			current1 <= "0000";
+			current100 <= current100 + 1;
+			
+		elsif current1 = "1001" then -- 0  1 9  
+			current1 <= "0000";
+			current10 <= current10  +1;
+		elsif en_add = '1' then
+			current1 <= current1 +1;
+		end if;
+	end if;
+	score100_out 	<= current100;
+	score10_out 	<= current10;
+	score1_out 		<= current1;
+	
+	prevScore100 	<= current100;
+	prevScore10 	<= current10;
+	prevScore1		<= current1;
+end architecture beh;

@@ -1,0 +1,16 @@
+Fitter Status : Successful - Wed May 23 22:20:58 2018
+Quartus II 32-bit Version : 13.0.0 Build 156 04/24/2013 SJ Full Version
+Revision Name : 305_Project
+Top-level Entity Name : 305_Project
+Family : Cyclone III
+Device : EP3C16F484C6
+Timing Models : Final
+Total logic elements : 1,563 / 15,408 ( 10 % )
+    Total combinational functions : 1,505 / 15,408 ( 10 % )
+    Dedicated logic registers : 352 / 15,408 ( 2 % )
+Total registers : 352
+Total pins : 29 / 347 ( 8 % )
+Total virtual pins : 0
+Total memory bits : 4,096 / 516,096 ( < 1 % )
+Embedded Multiplier 9-bit elements : 12 / 112 ( 11 % )
+Total PLLs : 1 / 4 ( 25 % )

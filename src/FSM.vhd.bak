@@ -1,0 +1,189 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE IEEE.STD_LOGIC_ARITH.all;
+USE IEEE.STD_LOGIC_UNSIGNED.all;
+
+entity fsm is
+	port(		timeUp, modeSel, confirm, pause						: in	std_logic;
+				currentLVL													: in	std_logic_vector(1 downto 0);
+				resetALL, mode, en_ball1, en_ball2, en_ball3		: in std_logic);
+				
+	
+end entity fsm;
+
+architecture beh of fsm is 
+type usart_states is (menu, practice, level1, level2, level3, transitionLVL,  win, lose, pause);
+	signal CS, NS : usart_states:= menu;
+	
+begin
+
+-------------------------------------------------------------------------------
+--Set current state
+Asynchronous_process: process (reset, clk)
+ begin
+	if reset = '1' then 
+	 CS <= menu;
+	elsif clk'event and clk = '1' then
+		CS <= NS;
+	end if;
+end process;
+
+-------------------------------------------------------------------------------
+--Determine next state
+NextState_logic: process (CS, timeUp, currentLVL, SW0, confirm, goalMet)
+ begin
+	case CS is
+		when menu =>
+			if confirm = '1' and mode = '0' then
+				NS <= practice;
+			elsif confirm = '1' and mode = '1' then
+				NS <= level1;
+			else 
+				NS <= CS;
+			end if;
+			
+		when practice =>
+			if timeUp = '1' and goalMet = '1' then 
+				NS <= TransitionLVL
+			elsif timeUp = '1' and goalMet = '0' then
+				NS <= lose;
+			else 
+				NS <= CS;
+			end if;
+		when level1 =>
+			if timeUp = '1' and goalMet = '1' then 
+				NS <= TransitionLVL
+			elsif timeUp = '1' and goalMet = '0' then
+				NS <= lose;
+			else 
+				NS <= CS;
+			end if;
+		when level2 =>
+			if timeUp = '1' and goalMet = '1' then 
+				NS <= TransitionLVL
+			elsif timeUp = '1' and goalMet = '0' then
+				NS <= lose;
+			else 
+				NS <= CS;
+			end if;
+		when level3 =>
+			if timeUp = '1' and goalMet = '1' then 
+				NS <= TransitionLVL
+			elsif timeUp = '1' and goalMet = '0' then
+				NS <= lose;
+			else 
+				NS <= CS;
+			end if;
+			
+		when transitionLVL => 
+			if currentLVL = "00" then 
+				NS <= level1;
+			elsif currentLVL = "01" then
+				NS <= level2;
+			elsif currentLVL = "10" then
+				NS <= level3;
+			elsif currentLVL = "11" then
+				NS <= win;
+			else 
+				NS <= CS;
+			end if;
+		
+		when pause =>
+			if SW0 = '0' and currentLVL = "00" then
+				NS <= practice;
+			if SW0 = '0' and currentLVL = "01" then
+				NS <= level1;
+			elsif SW0 = '0' and currentLVL = "10" then
+				NS <= level2;
+			elsif SW0 = '0' and currentLVL = "11" then
+				NS <= level3;
+			else 
+				NS <= CS;
+			end if;
+			
+		when win =>
+			if confirm = '1' then --some button to go to main menu
+				NS <= menu;
+			else
+				NS <= CS;
+			end if;
+		when lose => 
+			if confirm = '1' then --some button to go to main menu
+				NS <= menu;
+			else
+				NS <= CS;
+			end if;
+	end case;
+ end process;
+ 
+-----------------------------------------
+--Determine control signal outputs to datapath
+Output_logic: process (CS, timeUp, currentLVL, SW0, confirm, goalMet)
+ begin
+	S_res <= '0';
+	s_en <= '0';
+	sh_en <= '0';
+	n_en <= '0';
+	n_res <= '0';
+	load <= '0';
+	
+	case CS is
+		when menu =>
+			if btn1 = '1' then
+				-- press a button to change mode?
+				mode <= mode + 1
+			else 
+			
+			end if;
+			
+		when practice => 
+			if goalMet = '1' then
+				--change screen?
+			else 
+				--change to lose screen
+			end if;
+		when level1 =>
+			if timeUp = '1' and goalMet = '1' then
+				--change screen?
+			elsif timeUp = '1' and goalMet = '0' then
+				--change to lose screen
+			else 
+			
+			end if;
+		when level2 =>
+			if timeUp = '1' and goalMet = '1' then
+				--change screen?
+			elsif timeUp = '1' and goalMet = '0' then
+				--change to lose screen
+			else 
+			
+			end if;
+		when level3 =>
+			if timeUp = '1' and goalMet = '1' then
+				--change screen?
+			elsif timeUp = '1' and goalMet = '0' then
+				--change to lose screen
+			else 
+			
+			end if;
+			
+		when transitionLVL =>
+			if btn1 = '1' then
+				resetALL = '1';
+			else
+			
+			end if;
+		when pause =>
+			if SW0 = '0' then 
+				pause = '0';
+			else 
+				pause = '1';
+			end if;
+		when win =>
+
+		when lose => 
+		
+	end case;
+ end process;
+
+end architecture beh;

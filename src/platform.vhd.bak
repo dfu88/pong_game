@@ -1,0 +1,129 @@
+-- Bouncing Ball Video 
+--
+LIBRARY IEEE;
+USE IEEE.STD_LOGIC_1164.all;
+USE  IEEE.STD_LOGIC_ARITH.all;
+USE  IEEE.STD_LOGIC_UNSIGNED.all;
+LIBRARY lpm;
+USE lpm.lpm_components.ALL;
+
+PACKAGE de0core IS
+	COMPONENT vga_sync
+ 		PORT(clock_25Mhz, red, green, blue	: IN	STD_LOGIC;
+         	red_out, green_out, blue_out	: OUT 	STD_LOGIC;
+			horiz_sync_out, vert_sync_out	: OUT 	STD_LOGIC;
+			pixel_row, pixel_column			: OUT STD_LOGIC_VECTOR(9 DOWNTO 0));
+	END COMPONENT;
+END de0core;
+
+			-- Bouncing Ball Video 
+LIBRARY IEEE;
+USE IEEE.STD_LOGIC_1164.all;
+USE IEEE.STD_LOGIC_ARITH.all;
+USE IEEE.STD_LOGIC_SIGNED.all;
+LIBRARY work;
+USE work.de0core.all;
+
+ENTITY ball IS
+Generic(ADDR_WIDTH: integer := 12; DATA_WIDTH: integer := 1);
+
+   PORT(SIGNAL PB1, PB2, Clock, Vert_sync	: IN std_logic;
+			SIGNAL pixel_row, pixel_column	:IN std_logic_vector(9 downto 0);
+        SIGNAL Red,Green,Blue,LED4 			: OUT std_logic);
+END ball;
+
+architecture behavior of ball is
+
+			-- Video Display Signals   
+SIGNAL Red_Data, Green_Data, Blue_Data, vert_sync_int, --remove vsync_int later
+		reset, Ball_on, Direction 			: std_logic;
+SIGNAL Size 								: std_logic_vector(9 DOWNTO 0);  
+SIGNAL Ball_Y_motion 						: std_logic_vector(9 DOWNTO 0);
+SIGNAL Ball_x_motion 						: std_logic_vector(9 DOWNTO 0);--we added
+
+signal x_displacement,y_displacement: std_logic_vector(9 downto 0);
+
+SIGNAL Ball_Y_pos, Ball_X_pos				: std_logic_vector(9 DOWNTO 0) := "0000000000";
+--SIGNAL pixel_row, pixel_column				: std_logic_vector(9 DOWNTO 0); 
+signal reset_motion: std_logic:= '1';
+
+BEGIN           
+--   SYNC: vga_sync
+-- 		PORT MAP(clock_25Mhz => clock, 
+--				red => red_data, green => green_data, blue => blue_data,	
+--    	     	red_out => red, green_out => green, blue_out => blue,
+--			 	horiz_sync_out => horiz_sync, vert_sync_out => vert_sync_int,
+--			 	pixel_row => pixel_row, pixel_column => pixel_column);
+
+Size <= CONV_STD_LOGIC_VECTOR(8,10);
+--Ball_X_pos <= CONV_STD_LOGIC_VECTOR(20,10); --320 b4
+
+		-- need internal copy of vert_sync to read
+--vert_sync <= vert_sync_int;
+
+--		-- Colors for pixel data on video signal
+--Red_Data <=  '1';
+--		-- Turn off Green and Blue when displaying ball
+--Green_Data <= NOT Ball_on;
+--Blue_Data <=  NOT Ball_on;
+
+		-- Colors for pixel data on video signal
+Red <=  '1';
+		-- Turn off Green and Blue when displaying ball
+Green <= NOT Ball_on;
+Blue <=  NOT Ball_on;
+
+RGB_Display: Process (Ball_X_pos, Ball_Y_pos, pixel_column, pixel_row, Size)
+BEGIN
+			-- Set Ball_on ='1' to display ball
+ IF ("00" & Ball_X_pos <= '0' & pixel_column + Size) AND
+ 			-- compare positive numbers only
+ 	("00" & Ball_X_pos + Size >= '0' & pixel_column) AND
+ 	('0' & Ball_Y_pos <= pixel_row + Size) AND
+ 	(Ball_Y_pos + Size >= '0' & pixel_row ) THEN
+ 		Ball_on <= '1';
+ 	ELSE
+ 		Ball_on <= '0';
+END IF;
+END process RGB_Display;
+
+Move_Ball: process
+BEGIN
+			-- Move ball once every vertical sync
+	--WAIT UNTIL vert_sync_int'event and vert_sync_int = '1';
+	WAIT UNTIL vert_sync'event and vert_sync = '1';
+			
+			if (reset_motion = '1') then
+				
+				x_displacement <= CONV_STD_LOGIC_VECTOR(2,10);
+				y_displacement <= CONV_STD_LOGIC_VECTOR(1,10);
+				reset_motion <= '0';
+			end if;
+			
+			-- Bounce off top or bottom of screen 
+			IF ('0' & Ball_Y_pos) >= CONV_STD_LOGIC_VECTOR(480,10) - Size THEN --- concatenate 0 so that when ballypos exceeds 512, then it wont be recognised as signed val?
+				--Ball_Y_motion <= - CONV_STD_LOGIC_VECTOR(2,10); --move up
+				Ball_Y_motion <= - y_displacement; --our
+			ELSIF Ball_Y_pos <= Size THEN
+				--Ball_Y_motion <= CONV_STD_LOGIC_VECTOR(2,10); -- move down
+				Ball_Y_motion <= y_displacement; --our
+			END IF;
+			-- Compute next ball Y position
+				Ball_Y_pos <= Ball_Y_pos + ball_Y_motion;
+				
+				--our stuff
+			-- Bounce off left or right of screen 
+			IF ("00" & Ball_x_pos) >= CONV_STD_LOGIC_VECTOR(640,11) - Size THEN --- concatenate 0 so that when ballypos exceeds 512, then it wont be recognised as signed val?
+				--Ball_x_motion <= - CONV_STD_LOGIC_VECTOR(2,10); --move up
+				Ball_x_motion <= - x_displacement;
+			ELSIF "00" & Ball_x_pos <= '0' & Size THEN
+				--Ball_x_motion <= CONV_STD_LOGIC_VECTOR(2,10); -- move down
+				Ball_x_motion <= x_displacement;
+			END IF;
+			-- Compute next ball x position
+				Ball_x_pos <= Ball_x_pos + ball_x_motion;
+END process Move_Ball;
+LED4 <= not pb2;
+
+END behavior;
+

@@ -1,0 +1,81 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE IEEE.STD_LOGIC_ARITH.all;
+USE IEEE.STD_LOGIC_UNSIGNED.all;
+
+entity buttonFilter is
+	port(	clk, PB0, PB1			:  in std_logic;
+			PB0_out, PB1_out	: out std_logic);
+end entity buttonFilter;
+
+architecture beh of buttonFilter is 
+signal dbCount1, dbCount0: std_logic_vector:= "0000";
+signal debounce0, debounce1 			:std_logic;
+signal strobe0, strobe1 				:std_logic;
+signal debounce_prev0, debounce_prev1 	:std_logic;
+
+-------------------------------------------------------------------------------
+--Eliminates noise of the buttons so it only triggers when the button is properly pushed
+debouncer: process(clk, PB1, PB0)
+begin 
+	if rising_edge(clk) then
+		debounce1 <= '0';
+		if PB1 = '1' then
+			if dbCount1 <= x"F" then 
+				debounce1 <= '1';
+			else
+				dbCount1 <= dbCount1 + 1;
+			end if;
+		else 
+			dbCount1 <= (others => '0');
+		end if;
+		
+		debounce0 <= '0';
+		if PB0 = '1' then
+			if dbCount0 <= x"F" then 
+				debounce0 <= '1';
+			else
+				dbCount0 <= dbCount0 + 1;
+			end if;
+		else 
+			dbCount0 <= (others => '0');
+		end if;
+	end if;
+end process;
+
+-------------------------------------------------------------------------------
+--Stops button from triggering multiple times
+strober: process(debounce1, debounce0, clk)
+begin
+	if rising_edge(clk) then
+		strobe1 <= '0';
+		strobe0 <= '0';
+		debounce_prev1 <= debounce1;
+		debounce_prev0 <= debounce0;
+		
+		if debounce_prev1 = '0' and debounce1 = '1' then
+			strobe1 <= '1';
+		end if;
+		
+		if debounce_prev0 = '0' and debounce0 = '1' then
+			strobe0 <= '1';
+		end if;
+	end if;	
+end process;
+
+-------------------------------------------------------------------------------
+--PB1 to increment parameter select lines
+--PB0 to decrement parameter selcet lines 
+push_button: process(strobe0, strobe1, display_parameter, clk)
+begin
+	if clk'event and clk = '1' then
+		if strobe0 = '1' then
+			PB0_out <= '1';
+		end if;
+		if strobe1 = '1' then
+			PB1_out <= '1';
+		end if;
+	end if;
+end process;
+
+end architecture beh;

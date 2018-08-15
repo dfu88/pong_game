@@ -1,0 +1,26 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE IEEE.STD_LOGIC_ARITH.all;
+USE IEEE.STD_LOGIC_UNSIGNED.all;
+
+entity LFSR is
+	port(	clk: in std_logic;
+			data_out: out std_logic(9 downto 0));
+end entity LFSR;
+
+architecture beh of score_reg is
+signal seed: std_logic_vector(9 downto 0): = "0111001011";
+
+begin
+
+	process(clk)
+		begin
+		if rising_edge(clk) then
+			seed <= '0' & seed(8) & (not(seed(7)) xor seed(3)) & not(seed(5) xor seed(1)) & seed(5) & not(seed(3) xor seed(8)) & seed(3) & seed(2) & (seed(4) xor seed(6))
+						& seed(0) & seed(9));
+		end if;
+	end process
+	
+	data_out <= seed;
+	
+end architecture beh; 

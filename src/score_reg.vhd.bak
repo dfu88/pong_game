@@ -1,0 +1,24 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE IEEE.STD_LOGIC_ARITH.all;
+USE IEEE.STD_LOGIC_UNSIGNED.all;
+
+entity score_reg is
+	port(	enable,reset,v_sync	: In std_logic; --maybe vert sync instead of clk
+			output			: out std_logic_vector(9 downto 0));
+end entity score_reg;
+
+architecture beh of score_reg is
+signal scoreVal: std_logic_vector(9 downto 0):= "0000000000";
+begin 
+	process(clk)
+	begin 
+		if (reset = '1') then 
+			scoreVal <= "0000000000";
+		elsif (v_sync = '1' and enable = '1') then
+			scoreVal <= scoreVal + 1;
+		end if;
+		
+		output <= scoreVal;
+	end process;
+end architecture beh;

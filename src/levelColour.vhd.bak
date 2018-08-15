@@ -1,0 +1,17 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE IEEE.STD_LOGIC_ARITH.all;
+USE IEEE.STD_LOGIC_UNSIGNED.all;
+
+entity levelColour is
+	port(	redIn, greenIn, blueIn, mode	: in 	std_logic;
+			redOut, greenOut, blueOut				: out std_logic);
+end entity invertColour;
+
+architecture beh of invertColour is
+begin
+	redOut <= '1' when mode = "010" else redIn;
+	greenOut <= '1' when mode = "011" else greenIn;
+	blueOut <= '1' when  mode = "100" else blueIn;
+end architecture beh;
+			

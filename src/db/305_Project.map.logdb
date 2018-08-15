@@ -1,0 +1,7 @@
+v1
+DSP_BALANCING_IMPLEMENTATION,DSP_BLOCKS,ball:inst36|lpm_mult:Mult0|mult_c4t:auto_generated|mac_out2,
+DSP_BALANCING_IMPLEMENTATION,DSP_BLOCKS,ball:inst36|lpm_mult:Mult1|mult_c4t:auto_generated|mac_out2,
+DSP_BALANCING_IMPLEMENTATION,DSP_BLOCKS,ball:inst34|lpm_mult:Mult0|mult_c4t:auto_generated|mac_out2,
+DSP_BALANCING_IMPLEMENTATION,DSP_BLOCKS,ball:inst34|lpm_mult:Mult1|mult_c4t:auto_generated|mac_out2,
+DSP_BALANCING_IMPLEMENTATION,DSP_BLOCKS,ball:inst2|lpm_mult:Mult0|mult_c4t:auto_generated|mac_out2,
+DSP_BALANCING_IMPLEMENTATION,DSP_BLOCKS,ball:inst2|lpm_mult:Mult1|mult_c4t:auto_generated|mac_out2,
